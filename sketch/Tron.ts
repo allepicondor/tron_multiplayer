@@ -2,14 +2,18 @@ class Tron{
     players:Bike[]
     bikesAlive: Bike[]
     board:Board
-    score:[number,number]
+    score:[number,number,number,number]
     playerN: number
     SPAWN_POS: p5.Vector[]
     COLOR: p5.Color[]
     SPAWN_HEADINGS: p5.Vector[]
+    dim: [number,number]
+    index = 0
     constructor(res:[number,number],dim:[number,number],players:number) {
         this.board = new Board(dim,res);
         this.playerN = players
+        this.score = [0,0,0,0]
+        this.dim = dim
         this.SPAWN_HEADINGS = [createVector(1,0),createVector(-1,0)
                                 ,createVector(0,1),createVector(0,-1)]
         this.COLOR = [color(0,0,255),color(255,0,0),color(0,255,0),color(255,0,255)]
@@ -18,15 +22,16 @@ class Tron{
         this.reset()
     }
     reset(){
+        this.index = 0
         this.bikesAlive = []
         this.players = []
         for (let i = 0; i < this.playerN; i++){
-            console.log(i)
-            let bike = new Bike(this.SPAWN_POS[i],this.SPAWN_HEADINGS[i],this.COLOR[i],this.board)
+            //console.log(i)
+            let bike = new Bike(this.SPAWN_POS[i].copy(),this.SPAWN_HEADINGS[i].copy(),this.COLOR[i],this.board)
             this.players.push(bike)
             this.bikesAlive.push(bike)
         }
-        console.log(this.bikesAlive.length)
+        //console.log(this.bikesAlive.length)
 
     }
     private number_to_vector(n: number):p5.Vector{
@@ -34,13 +39,13 @@ class Tron{
             return createVector(-1,0)
         }
         else if (n === 1){
-            return createVector(0,1)
+            return createVector(0,-1)
         }
         else if (n === 2){
             return createVector(1,0)
         }
         else if (n === 3){
-            return createVector(0,-1)
+            return createVector(0,1)
         }else{
             return null
         }
@@ -49,7 +54,7 @@ class Tron{
     }
     step(callback: ()=> Array<number>){
         let moves = callback()
-        console.log(this.players)
+        //console.log(this.players)
         let i:number = 0
         for (let bike of this.bikesAlive){
             let new_heading = this.number_to_vector(moves[i])
@@ -64,11 +69,8 @@ class Tron{
             i++
         }
         this.check_headons()
-        if (this.bikesAlive.length == 1){
-            let lastAlive = this.players.indexOf(this.bikesAlive[0])
-            this.score[lastAlive] += 1;
-            console.log(str(lastAlive)+"WON!!!!")
-        }
+        this.index += 1
+
     }
     draw(){
         for (let bike of this.bikesAlive){
@@ -89,13 +91,26 @@ class Tron{
         let index = Math.floor(Math.random() * choices.length);
         return index;
     }
+    private check_on_board(loc:p5.Vector): boolean {
+        return loc.x < 0 || loc.y < 0 || loc.x > this.dim[0] || loc.y > this.dim[1]
+    }
+
     private check_headons() {
-        let dead_bikes:Bike[] = []
+        let dead_bikes: Bike[] = []
 
         for (let bike of this.bikesAlive){
             if (!this.containsObject(bike,dead_bikes)){
+                if (this.check_on_board(bike.location)){
+                    let index = this.bikesAlive.indexOf(bike)
+                    this.bikesAlive.splice(index,1)
+                    continue
+                }
                 for (let other_bike of this.bikesAlive) {
-                    if (bike.location == other_bike.location) {
+                    if (bike == other_bike){
+                        continue
+                    }
+                    //console.log(bike.location,other_bike.location)
+                    if (bike.location.equals(other_bike.location)) {
                         dead_bikes.push(bike)
                         dead_bikes.push(other_bike)
                         break
@@ -103,11 +118,12 @@ class Tron{
                 }
             }
         }
-        //while (dead_bikes.length > 0){
-        //    console.log(dead_bikes.length)
-        //    let i = this.chooseRI(dead_bikes)
-        //    this.bikesAlive.splice(i,1)
-        //}
+        while (dead_bikes.length > 1){
+            let i = this.chooseRI(dead_bikes)
+            let index = this.bikesAlive.indexOf(dead_bikes[i])
+            this.bikesAlive.splice(index,1)
+            dead_bikes.splice(i,1)
+        }
 
     }
 }

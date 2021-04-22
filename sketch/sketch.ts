@@ -1,23 +1,41 @@
 // GLOBAL VARS & TYPES
+
 let numberOfShapes = 15;
 let speed: p5.Element;
 let tron: Tron;
+let keys: number[];
+let socket: SocketIOClient.Socket
+let settings: Settings;
+let playing = false
+let Nplayer = 0
+let ROOM_ID = 0
+let timer: NodeJS.Timer
 // P5 WILL AUTOMATICALLY USE GLOBAL MODE IF A DRAW() FUNCTION IS DEFINED
 function setup() {
   console.log("🚀 - Setup initialized - P5 is running");
-
-  tron = new Tron([500,500],[50,50],2)
+  keys = [-1,-1,-1,-1]
+  //tron = new Tron([1020,1020],[51,51],2)//ODD
   // FULLSCREEN CANVAS
-  createCanvas(500, 500);
-
+  addbuttonListeners()
   // SETUP SOME OPTIONS
-  rectMode(CENTER).noFill().frameRate(25);
-
+  // @ts-ignore
+  socket = io("ws://192.168.55.192:5000");
+  socket.on("joinedRoom",JoinedRoom)
 }
-function keys_moves():Array<number>{
-  let moves = [-1,-1,-1,-1]
 
-  return moves
+function keys_moves():Array<number>{
+  if (keyIsDown(65)) {
+    keys[Nplayer] = 0
+  } else if (keyIsDown(87)) {
+    keys[Nplayer] = 1
+  } else if (keyIsDown(68)) {
+    keys[Nplayer] = 2
+  } else if (keyIsDown(83)) {
+    keys[Nplayer] = 3
+  }else{
+    keys[Nplayer] = -1
+  }
+  return keys
 
 }
 
@@ -25,9 +43,20 @@ function keys_moves():Array<number>{
 function draw() {
   // CLEAR BACKGROUND
   background(0);
-  // TRANSLATE TO CENTER OF SCREEN
-  tron.step(keys_moves)
-  tron.draw()
+  if (playing) {
+    tron.step(keys_moves)
+    tron.draw()
+    if (tron.bikesAlive.length == 1) {
+      keys = [-1, -1, -1, -1]
+      let lastAlive = tron.players.indexOf(tron.bikesAlive[0])
+      tron.score[lastAlive] += 1;
+      console.log(str(lastAlive) + "WON!!!!")
+      tron.reset()
+      playing = false
+      socket.emit("stop",lastAlive)
+    }
+  
+  }
 }
 
 // p5 WILL AUTO RUN THIS FUNCTION IF THE BROWSER WINDOW SIZE CHANGES

@@ -12,10 +12,10 @@ class Board{
 
 
     }
-    draw_cord(cord:p5.Vector):boolean{
-        fill(204, 101, 192, 127);
-        stroke(127, 63, 120);
-        console.log("here")
+    draw_cord(cord:p5.Vector,color:p5.Color):boolean{
+        fill(color);
+
+        //console.log("here")
         let pixel = this.get_pixel(cord)
         rect(pixel.x+this.segment[0]/2,pixel.y+this.segment[1]/2,this.segment[0],this.segment[1])
         return true
