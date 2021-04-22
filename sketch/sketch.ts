@@ -10,6 +10,7 @@ let playing = false
 let Nplayer = 0
 let ROOM_ID = 0
 let timer: NodeJS.Timer
+let dataUpdated = false
 // P5 WILL AUTOMATICALLY USE GLOBAL MODE IF A DRAW() FUNCTION IS DEFINED
 function setup() {
   console.log("🚀 - Setup initialized - P5 is running");
@@ -44,7 +45,11 @@ function draw() {
   // CLEAR BACKGROUND
   background(0);
   if (playing) {
+    if (!dataUpdated){
+        print("Missed Update")
+    }
     tron.step(keys_moves)
+    dataUpdated = false
     tron.draw()
     if (tron.bikesAlive.length == 1) {
       keys = [-1, -1, -1, -1]

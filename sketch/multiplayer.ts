@@ -6,6 +6,7 @@ type Settings = {
 type PlayerData = {
     heading: [number,number]
     location: [number,number]
+    index: number
 }
 function addbuttonListeners(){
     createCanvas(windowHeight, windowHeight);
@@ -25,13 +26,24 @@ function JoinRoom(){
 }
 function grabSettings(){
     let settings = <Settings>{};
-    settings.playerN = 2
-    settings.size = [51,51]
-    settings.speed = 15
+    // @ts-ignore
+    settings.playerN = parseInt(document.getElementById("Nplayer").value)
+    // @ts-ignore
+    settings.size = [parseInt(document.getElementById("sizeX").value),parseInt(document.getElementById("sizeY").value)]
+    // @ts-ignore
+    settings.speed = parseInt(document.getElementById("speed").value)
     return settings
 }
 function setSettings(Nsettings:Settings){
     settings=Nsettings
+    // @ts-ignore
+    document.getElementById("Nplayer").value = parseInt(settings.playerN)
+    // @ts-ignore
+    document.getElementById("sizeX").value= parseInt(settings.size[0])
+    // @ts-ignore
+    document.getElementById("sizeY").value= parseInt(settings.size[1])
+    // @ts-ignore
+    document.getElementById("speed").value = parseInt(settings.speed)
 }
 function CreateRoom(){
     let settings = grabSettings()
@@ -55,14 +67,17 @@ function Start(args:any){
     console.log("START")
     rectMode(CENTER).noFill().frameRate(settings.speed);
     tron = new Tron([windowHeight,windowHeight], settings.size, settings.playerN)
+    console.log(settings)
     timer = setInterval(SendData,1)
     SendData()
     playing = true
     socket.on("data",updateData)
 }
 function SendData(){
-    socket.emit("gameData",{"data":tron.players[Nplayer].generateData(),"playerID":Nplayer,"roomID":ROOM_ID})
-
+    let data = tron.players[Nplayer].generateData()
+    data.index = tron.index
+    socket.emit("gameData",{"data":data,"playerID":Nplayer,"roomID":ROOM_ID})
+    
 }
 function updateData(args:any){
     //console.log(args)
@@ -72,6 +87,11 @@ function updateData(args:any){
     //console.log(tron.index.toString()+":"+index.toString())
     let i = 0
     for (let player of data) {
+        //console.log(player)
+        if (player == undefined){
+            console.log("NO player")
+            continue
+        }
         if (i != Nplayer){
             tron.players[i].heading = createVector(player.heading[0], player.heading[1])
             let locVec = createVector(player.location[0], player.location[1])
@@ -82,5 +102,6 @@ function updateData(args:any){
 
         i++;
     }
+    dataUpdated = true
 
 }

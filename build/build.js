@@ -228,13 +228,17 @@ function JoinRoom() {
 }
 function grabSettings() {
     var settings = {};
-    settings.playerN = 2;
-    settings.size = [51, 51];
-    settings.speed = 15;
+    settings.playerN = parseInt(document.getElementById("Nplayer").value);
+    settings.size = [parseInt(document.getElementById("sizeX").value), parseInt(document.getElementById("sizeY").value)];
+    settings.speed = parseInt(document.getElementById("speed").value);
     return settings;
 }
 function setSettings(Nsettings) {
     settings = Nsettings;
+    document.getElementById("Nplayer").value = parseInt(settings.playerN);
+    document.getElementById("sizeX").value = parseInt(settings.size[0]);
+    document.getElementById("sizeY").value = parseInt(settings.size[1]);
+    document.getElementById("speed").value = parseInt(settings.speed);
 }
 function CreateRoom() {
     var settings = grabSettings();
@@ -255,13 +259,16 @@ function Start(args) {
     console.log("START");
     rectMode(CENTER).noFill().frameRate(settings.speed);
     tron = new Tron([windowHeight, windowHeight], settings.size, settings.playerN);
+    console.log(settings);
     timer = setInterval(SendData, 1);
     SendData();
     playing = true;
     socket.on("data", updateData);
 }
 function SendData() {
-    socket.emit("gameData", { "data": tron.players[Nplayer].generateData(), "playerID": Nplayer, "roomID": ROOM_ID });
+    var data = tron.players[Nplayer].generateData();
+    data.index = tron.index;
+    socket.emit("gameData", { "data": data, "playerID": Nplayer, "roomID": ROOM_ID });
 }
 function updateData(args) {
     var data = args.data;
@@ -269,6 +276,10 @@ function updateData(args) {
     var i = 0;
     for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
         var player = data_1[_i];
+        if (player == undefined) {
+            console.log("NO player");
+            continue;
+        }
         if (i != Nplayer) {
             tron.players[i].heading = createVector(player.heading[0], player.heading[1]);
             var locVec = createVector(player.location[0], player.location[1]);
@@ -278,6 +289,7 @@ function updateData(args) {
         }
         i++;
     }
+    dataUpdated = true;
 }
 var numberOfShapes = 15;
 var speed;
@@ -289,6 +301,7 @@ var playing = false;
 var Nplayer = 0;
 var ROOM_ID = 0;
 var timer;
+var dataUpdated = false;
 function setup() {
     console.log("🚀 - Setup initialized - P5 is running");
     keys = [-1, -1, -1, -1];
@@ -317,7 +330,11 @@ function keys_moves() {
 function draw() {
     background(0);
     if (playing) {
+        if (!dataUpdated) {
+            print("Missed Update");
+        }
         tron.step(keys_moves);
+        dataUpdated = false;
         tron.draw();
         if (tron.bikesAlive.length == 1) {
             keys = [-1, -1, -1, -1];
